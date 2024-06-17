@@ -1,16 +1,23 @@
-rem pwsh -c Disable-MMAgent -ApplicationLaunchPrefetching -mc
+rem remove some components
+powershell -c Disable-MMAgent -ApplicationLaunchPrefetching -mc
+rem disable restore because i personally never use it and think it breaks more things than it fixes and wastes disk space
 powershell -c disable-computerrestore -drive "C:\"
+rem add ssh
 powershell -c Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
 powershell -c Set-Service -Name sshd -StartupType "Automatic"
+rem start it
 powershell -c Start-Service sshd
 powershell -c Disable-WindowsErrorReporting
 
+rem update the secure boot blocklist (taken from MS documentation on technet)
 mountvol q: /S 
 echo y|xcopy %systemroot%\System32\SecureBootUpdates\SKUSiPolicy.p7b q:\EFI\Microsoft\Boot 
 mountvol q: /D
 
+rem import saved mitigation settings from documents folder
 powershell -c Set-ProcessMitigation -PolicyFilePath "e:\pdf\Settings.xml"
 
+rem remove some features we don't use
 dism /online /disable-feature /featurename:"MicrosoftWindowsPowerShellV2Root" /norestart
 DISM /Online /Disable-Feature /FeatureName:"MicrosoftWindowsPowerShellV2" /NoRestart
 DISM /Online /Disable-Feature /FeatureName:"SmbDirect" /NoRestart
@@ -20,21 +27,28 @@ dism /online /disable-feature /featurename:"WorkFolders-Client" /norestart
 dism /online /disable-feature /featurename:"Printing-Foundation-LPRPortMonitor" /norestart
 dism /online /disable-feature /featurename:"Printing-Foundation-InternetPrinting-Client" /norestart
 dism /online /disable-feature /featurename:"RemoteAssistance" /norestart
+dism /online /disable-feature /featurename:"Internet-Explorer-Optional-amd64" /norestart
+dism /online /Remove-Capability /CapabilityName:"MathRecognizer~~~~0.0.1.0" /norestart
+dism /online /Remove-Capability /CapabilityName:"App.StepsRecorder~~~~0.0.1.0" /norestart
 
+rem configure some bcd options we like
 bcdedit /set tscsyncpolicy legacy
-bcdedit /deletevalue useplatformclock >NUL 2>nul
-bcdedit /set disabledynamictick yes >NUL 2>nul
-bcdedit /set lastknowngood yes >NUL 2>nul
+bcdedit /deletevalue useplatformclock
+bcdedit /set disabledynamictick yes
+bcdedit /set lastknowngood yes
 
-netsh interface Teredo set state type=default >NUL 2>nul
-netsh interface Teredo set state servername=default >NUL 2>nul
+rem reset these as the defaults seem to work best and anything else causes issues with ssh loopback for some bizarre reason
+netsh interface Teredo set state type=default
+netsh interface Teredo set state servername=default
 
 REM WINDOWS NT
 rem fix terminal services being weird when you connect remotely
 reg add "HKLM\software\policies\microsoft\windows nt\Terminal Services\Client" /v fClientDisableUDP /d 1 /t REG_DWORD /f
 rem fix shadow sessions for terminal services that nobody ever wanted
 reg add "HKLM\software\policies\microsoft\windows nt\Terminal Services\Client" /v Shadow /d 0 /t REG_DWORD /f
+rem disable http printing since not needed
 reg add "HKCU\Software\Policies\Microsoft\Windows NT\Printers" /v DisableHTTPPrinting /t REG_DWORD /d 1 /f
+rem disable printer driver download, do it manually
 reg add "HKCU\Software\Policies\Microsoft\Windows NT\Printers" /v DisableWebPnPDownload /t REG_DWORD /d 1 /f
 reg add "HKCU\Software\Policies\Microsoft\Windows NT\CurrentVersion\Software Protection Platform" /v NoGenTicket /t REG_DWORD /d 1 /f
 
@@ -60,7 +74,6 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\GameDVR" /v AllowGameDVR /t RE
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\GameDVR" /v AppCaptureEnabled /t REG_DWORD /d 0 /f 
 reg add "HKCU\System\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f 
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v NoInstrumentation /t REG_DWORD /d 1 /f 
-
 
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 38 /f
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Secureboot" /v AvailableUpdates /t REG_DWORD /d 0x10 /f
@@ -142,7 +155,18 @@ reg add "HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System" /v Disa
 reg add "HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\System" /v VerboseStatus /t REG_DWORD /d 0 /f
 reg add "HKLM\Software\Policies\Microsoft\WindowsStore" /v AutoDownload /t REG_DWORD /d 4 /f
 reg add "HKCU\Software\Policies\Microsoft\Messenger\Client" /v CEIP /t REG_DWORD /d 2 /f
-
+reg add "HKLM\SYSTEM\ControlSet001\Control\Session Manager" /v "DisableWpbtExecution" /t REG_DWORD /d 1 /f 
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore" /v "RPSessionInterval" /t REG_DWORD /d 0 /f 
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore\cfg" /v DiskPercent /t REG_DWORD /d 0 /f 
+reg add "HKCU\Software\Microsoft\Multimedia\Audio" /v UserDuckingPreference /t REG_DWORD /d 3 /f 
+rem attempt to prevent windows from replacing your current up to date drivers with outdated microsoft drivers at every update
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v ExcludeWUDriversInQualityUpdate /t REG_DWORD /d 1 /f 
+reg add "HKLM\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings" /v ExcludeWUDriversInQualityUpdate /t REG_DWORD /d 1 /f 
+rem and prevent it from phoning home which will error out anyways every time
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DriverSearching" /v DriverUpdateWizardWuSearchEnabled /t REG_DWORD /d 0 /f 
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DriverSearching" /v DontSearchWindowsUpdate /t REG_DWORD /d 1 /f 
+reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Device Metadata" /v PreventDeviceMetadataFromNetwork /t REG_DWORD /d 1 /f 
+													
 reg add "HKCU\Software\Policies\Microsoft\Windows\HandwritingErrorReports" /v PreventHandwritingErrorReports /t REG_DWORD /d 1 /f
 
 reg add "HKCU\Software\Policies\Microsoft\Windows\TabletPC" /v PreventHandwritingDataSharing /t REG_DWORD /d 1 /f
@@ -249,7 +273,7 @@ reg add "HKCU\Control Panel\Mouse" /v MouseHoverTime /t REG_DWORD /d 30 /f
 rem do this through group policy!
 rem kernel shadow stacks seems to cause bizarre issues and are probably not supported on most cpus 
 rem reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\KernelShadowStacks" /v Enabled /t REG_DWORD /d 1 /f 
-rem this one!  fuick this in particular
+rem this one!  this in particular
 rem reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\KernelShadowStacks" /v WasEnabledBy /t REG_DWORD /d 2 /f 
 rem reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard" /v "EnableVirtualizationBasedSecurity" /t REG_DWORD /d 1 /f
 rem reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard" /v "RequirePlatformSecurityFeatures" /t REG_DWORD /d 1 /f
@@ -333,6 +357,26 @@ reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v "Ena
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v "ConsentPromptBehaviorUser" /t REG_DWORD /d 3 /f
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" /v "FilterAdministratorToken" /t REG_DWORD /d 0 /f
 
+reg add  "HKLM\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules"  /v "{60E6D465-398E-4850-BE86-7EF7620A2377}" /t REG_SZ /d  "v2.24|Action=Block|Active=TRUE|Dir=Out|App=C:\windows\system32\svchost.exe|Svc=DiagTrack|Name=Windows  Telemetry|" /f
+reg add  "HKLM\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules"  /v "{2765E0F4-2918-4A46-B9C9-43CDD8FCBA2B}" /t REG_SZ /d  "v2.24|Action=Block|Active=TRUE|Dir=Out|App=C:\windows\systemapps\microsoft.windows.cortana_cw5n1h2txyewy\searchui.exe|Name=Search  and Cortana  application|AppPkgId=S-1-15-2-1861897761-1695161497-2927542615-642690995-327840285-2659745135-2630312742|"  /f
+rem reg add HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{71a27cdd-812a-11d0-bec7-08002be2092f} /v LowerFilters /t REG_MULTI_SZ /d fvevol\0iorate\0rdyboost /f
+rem reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v FeatureSettingsOverride /t REG_DWORD /d 33554432 /f
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\BingChatInstaller.exe" /v Debugger /t REG_SZ /d "%windir%\System32\taskkill.exe" /f
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\BGAUpsell.exe" /v Debugger /t REG_SZ /d "%windir%\System32\taskkill.exe" /f
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\BCILauncher.exe" /v Debugger /t REG_SZ /d "%windir%\System32\taskkill.exe" /f
+reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\ReserveManager" /v ShippedWithReserves /t REG_DWORD /d 0 /f
+reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Servicing" /v RepairContentServerSource /t REG_DWORD /d 0 /f
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer" /v MultipleInvokePromptMinimum /t REG_DWORD /d 100 /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" /v EnableMulticast /t REG_DWORD /d 0 /f
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters" /v RestrictNullSessAccess /t REG_DWORD /d 1 /f
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v RestrictAnonymous /t REG_DWORD /d 1 /f 
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters" /v DisableBandwidthThrottling /t REG_DWORD /d 1 /f 
+rem description: Improves performance in File Explorer by not automatically determining the folder 'type' (such as pictures) for each folder's content
+reg add "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags\AllFolders\Shell" /v FolderType /t REG_SZ /d "NotSpecified" /f 
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Task Scheduler\Maintenance" /v WakeUp /t REG_DWORD /d 0 /f 
+reg add HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Communications /v ConfigureChatAutoInstall /t REG_DWORD /d 0 /f
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Chat" /f /v ChatIcon /t REG_DWORD /d 2
+
 sc config WdiSystemHost start= disabled
 sc config WdiServiceHost start= disabled
 sc config DPS start= disabled
@@ -354,9 +398,14 @@ sc config GpuEnergyDrv start=disabled
 sc config sysmain start=disabled
 sc config tcpipreg start=disabled
 sc config dmwappushservice start=disabled
-
-reg add  "HKLM\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules"  /v "{60E6D465-398E-4850-BE86-7EF7620A2377}" /t REG_SZ /d  "v2.24|Action=Block|Active=TRUE|Dir=Out|App=C:\windows\system32\svchost.exe|Svc=DiagTrack|Name=Windows  Telemetry|" /f
-reg add  "HKLM\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules"  /v "{2765E0F4-2918-4A46-B9C9-43CDD8FCBA2B}" /t REG_SZ /d  "v2.24|Action=Block|Active=TRUE|Dir=Out|App=C:\windows\systemapps\microsoft.windows.cortana_cw5n1h2txyewy\searchui.exe|Name=Search  and Cortana  application|AppPkgId=S-1-15-2-1861897761-1695161497-2927542615-642690995-327840285-2659745135-2630312742|"  /f
+sc config lfsvc start=disabled
+sc config MapsBroker start=disabled
+sc config OneSyncSvc start=disabled
+sc config TrkWks start=disabled
+sc config PcaSvc start=disabled
+sc config WSearch start=disabled
+sc config wercplsupport start=disabled
+sc config UCPD start=disabled
 
 powercfg -h off
 
@@ -406,26 +455,7 @@ bootsect /nt60 all /force /mbr
 setx POWERSHELL_TELEMETRY_OPTOUT 1
 setx DOTNET_CLI_TELEMETRY_OPTOUT 1
 
-rem reg add HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{71a27cdd-812a-11d0-bec7-08002be2092f} /v LowerFilters /t REG_MULTI_SZ /d fvevol\0iorate\0rdyboost /f
-rem reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v FeatureSettingsOverride /t REG_DWORD /d 33554432 /f
-reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\BingChatInstaller.exe" /v Debugger /t REG_SZ /d "%windir%\System32\taskkill.exe" /f
-reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\BGAUpsell.exe" /v Debugger /t REG_SZ /d "%windir%\System32\taskkill.exe" /f
-reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\BCILauncher.exe" /v Debugger /t REG_SZ /d "%windir%\System32\taskkill.exe" /f
-reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\ReserveManager" /v ShippedWithReserves /t REG_DWORD /d 0 /f
-reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Servicing" /v RepairContentServerSource /t REG_DWORD /d 0 /f
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer" /v MultipleInvokePromptMinimum /t REG_DWORD /d 100 /f
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" /v EnableMulticast /t REG_DWORD /d 0 /f
-reg add "HKLM\SYSTEM\CurrentControlSet\Services\LanManServer\Parameters" /v RestrictNullSessAccess /t REG_DWORD /d 1 /f
-reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v RestrictAnonymous /t REG_DWORD /d 1 /f 
-reg add "HKLM\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters" /v DisableBandwidthThrottling /t REG_DWORD /d 1 /f 
-rem description: Improves performance in File Explorer by not automatically determining the folder 'type' (such as pictures) for each folder's content
-reg add "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags\AllFolders\Shell" /v FolderType /t REG_SZ /d "NotSpecified" /f 
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Task Scheduler\Maintenance" /v WakeUp /t REG_DWORD /d 0 /f 
-
 net accounts /maxpwage:unlimited
-
-reg add HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Communications /v ConfigureChatAutoInstall /t REG_DWORD /d 0 /f
-reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Chat" /f /v ChatIcon /t REG_DWORD /d 2
 
 PowerShell -NonInteractive -NoLogo -NoP -C "& {$tmp = (New-TemporaryFile).FullName; CertUtil -generateSSTFromWU -f $tmp; if ( (Get-Item $tmp | Measure-Object -Property Length -Sum).sum -gt 0 ) { $SST_File = Get-ChildItem -Path $tmp; $SST_File | Import-Certificate -CertStoreLocation "Cert:\LocalMachine\Root"; $SST_File | Import-Certificate -CertStoreLocation "Cert:\LocalMachine\AuthRoot" } Remove-Item -Path $tmp}" >NUL 2>nul
 
