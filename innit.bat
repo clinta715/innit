@@ -52,16 +52,15 @@ rem disable printer driver download, do it manually
 reg add "HKCU\Software\Policies\Microsoft\Windows NT\Printers" /v DisableWebPnPDownload /t REG_DWORD /d 1 /f
 reg add "HKCU\Software\Policies\Microsoft\Windows NT\CurrentVersion\Software Protection Platform" /v NoGenTicket /t REG_DWORD /d 1 /f
 
-rem remove stupid new right click menu
-rem REG add "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve
+rem remove new right click menu
+REG add "HKCU\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32" /f /ve
 
 REG ADD "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize" /v StartupDelayInMSec /t REG_DWORD /d 0 /f
-
-rem make lsass run with more fancy options that probably ultimately do nothing but does break a bunch of shit
+rem The value of 1 means that the hardening is enabled and 0 means that it’s disabled.
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Ole\AppCompat" /v RequireIntegrityActivationAuthenticationLevel /t REG_DWORD /d 1 /f
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Lsa" /v RunAsPPL /t REG_DWORD /d 1 /f
 
 reg add "HKLM\software\Wow6432Node\Microsoft\Cryptography\Wintrust\Config" /v EnableCertPaddingCheck /d 1 /t REG_DWORD /f
-rem fixes stupid ass microsoft certificate stupid ass ness
 reg add "HKLM\software\Microsoft\Cryptography\Wintrust\Config" /v EnableCertPaddingCheck /d 1 /t REG_DWORD /f
 
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" /v GlobalUserDisabled /t REG_DWORD /d 0 /f
@@ -75,15 +74,16 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\GameDVR" /v AppCaptureEnabled 
 reg add "HKCU\System\GameConfigStore" /v GameDVR_Enabled /t REG_DWORD /d 0 /f 
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v NoInstrumentation /t REG_DWORD /d 1 /f 
 
+rem # Disable Smart App Control
+rem # Causes slow app loading issues and sends data to Microsoft
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\CI\Policy" /v VerifiedAndReputablePolicyState /t REG_DWORD /d 0 /t 
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 38 /f
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Secureboot" /v AvailableUpdates /t REG_DWORD /d 0x10 /f
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v SystemResponsiveness /t REG_DWORD /d 0 /f
-
-echo y|reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v NetworkThrottlingIndex /t REG_DWORD /d 10
+reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" /v NetworkThrottlingIndex /t REG_DWORD /d 10 /f
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v EnablePrefetcher /t REG_DWORD /d 0 /f
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v EnableSuperfetch /t REG_DWORD /d 0 /f
 reg add "HKLM\SYSTEM\CurrentControlSet\Control" /v "SvcHostSplitThresholdInKB" /t REG_DWORD /d "4294967295" /f
-rem this actually seems like maybe a stupid thing to do
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager" /v HeapDeCommitFreeBlockThreshold /t REG_DWORD /d 0 /f
 REG add "HKLM\SYSTEM\ControlSet001\Control\PriorityControl" /v Win32PrioritySeparation /t REG_DWORD /d 38 /f
 reg add "HKLM\SYSTEM\ControlSet001\Control\Session Manager" /v DisableWpbtExecution /t REG_DWORD /d 1 /f 
@@ -118,7 +118,6 @@ reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" 
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v FeatureManagementEnabled /t REG_DWORD /d 0 /f
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v RotatingLockScreenEnabled /t REG_DWORD /d 0 /f
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v RotatingLockScreenOverlayEnabled /t REG_DWORD /d 0 /f
-
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\AppCompat" /v AITEnable /t REG_DWORD /d 0 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\AppCompat" /v DisableInventory /t REG_DWORD /d 1 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\AppCompat" /v DisablePCA /t REG_DWORD /d 1 /f
@@ -128,9 +127,7 @@ reg add "HKLM\Software\Policies\Microsoft\Windows\AppCompat" /v DisableEngine /t
 reg add "HKLM\Software\Policies\Microsoft\Windows\AppCompat" /v SbEnable /t REG_DWORD /d 1 /f
 reg add "HKLM\SOFTWARE\Microsoft\Ole\AppCompat" /v RaiseActivationAuthenticationLevel /t REG_DWORD /d 1 /f
 reg add "HKLM\SOFTWARE\Microsoft\Ole\AppCompat" /v RequireIntegrityActivationAuthenticationLevel /t REG_DWORD /d 1 /f
-
 reg add "HKCU\Software\Policies\Microsoft\InternetManagement" /v RestrictCommunication /t REG_DWORD /d 1 /f
-
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v NoPublishingWizard /t REG_DWORD /d 1 /f
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v NoWebServices /t REG_DWORD /d 1 /f
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v NoOnlinePrintsWizard /t REG_DWORD /d 1 /f
@@ -166,21 +163,15 @@ rem and prevent it from phoning home which will error out anyways every time
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DriverSearching" /v DriverUpdateWizardWuSearchEnabled /t REG_DWORD /d 0 /f 
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DriverSearching" /v DontSearchWindowsUpdate /t REG_DWORD /d 1 /f 
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Device Metadata" /v PreventDeviceMetadataFromNetwork /t REG_DWORD /d 1 /f 
-													
 reg add "HKCU\Software\Policies\Microsoft\Windows\HandwritingErrorReports" /v PreventHandwritingErrorReports /t REG_DWORD /d 1 /f
-
 reg add "HKCU\Software\Policies\Microsoft\Windows\TabletPC" /v PreventHandwritingDataSharing /t REG_DWORD /d 1 /f
-
 reg add "HKCU\Software\Policies\Microsoft\Assistance\Client\1.0" /v NoOnlineAssist /t REG_DWORD /d 1 /f
 reg add "HKCU\Software\Policies\Microsoft\Assistance\Client\1.0" /v NoExplicitFeedback /t REG_DWORD /d 1 /f
 reg add "HKCU\Software\Policies\Microsoft\Assistance\Client\1.0" /v NoImplicitFeedback /t REG_DWORD /d 1 /f
-
 reg add "HKCU\Software\Policies\Microsoft\WindowsMovieMaker" /v WebHelp /t REG_DWORD /d 0 /f
 reg add "HKCU\Software\Policies\Microsoft\WindowsMovieMaker" /v CodecDownload /t REG_DWORD /d 0 /f
 reg add "HKCU\Software\Policies\Microsoft\WindowsMovieMaker" /v WebPublish /t REG_DWORD /d 0 /f
-
 reg add "HKLM\Software\Policies\Microsoft\EventViewer" /v MicrosoftEventVwrDisableLinks /t REG_DWORD /d 1 /f
-
 reg add "HKLM\Software\Policies\Microsoft\Windows\Internet Connection Wizard" /v ExitOnMSICW /t REG_DWORD /d 1 /f
 
 REM ERROR REPORTING
@@ -196,22 +187,16 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting\Consen
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting\Consent" /v DefaultOverrideBehavior /t REG_DWORD /d 1 /f
 reg add "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting" /v Disabled /t REG_DWORD /d 1 /f
 reg add "HKLM\Software\Policies\Microsoft\PCHealth\ErrorReporting" /v DoReport /t REG_DWORD /d 0 /f
-
 reg add "HKLM\Software\Policies\Microsoft\PCHealth\HelpSvc" /v MicrosoftKBSearch /t REG_DWORD /d 0 /f
 reg add "HKLM\Software\Policies\Microsoft\PCHealth\HelpSvc" /v Headlines /t REG_DWORD /d 0 /f
-
 reg add "HKCU\Software\Policies\Microsoft\Windows\EdgeUI" /v DisableHelpSticker /t REG_DWORD /d 1 /f
 reg add "HKCU\Software\Policies\Microsoft\Windows\EdgeUI" /v DisableMFUTracking /t REG_DWORD /d 1 /f
 reg add "HKLM\software\policies\microsoft\edge" /v HubsSidebarEnabled /d 0 /t REG_DWORD /f
-
 reg add "HKLM\Software\Policies\Microsoft\Windows\DataCollection" /v AllowCommercialDataPipeline /t REG_DWORD /d 0 /f
 reg add "HKLM\Software\Policies\Microsoft\Windows\DataCollection" /v AllowDeviceNameInTelemetry /t REG_DWORD /d 0 /f
-
 reg add "HKLM\Software\Policies\Microsoft\Windows Defender\Reporting" /v DisableGenericRePorts /t REG_DWORD /d 1 /f
-
 reg add "HKLM\Software\Policies\Microsoft\Windows Defender\SmartScreen" /v EnableSmartScreen /t REG_DWORD /d 0 /f
 reg add "HKLM\Software\Policies\Microsoft\Windows Defender\SmartScreen" /v ConfigureAppInstallControl /t REG_DWORD /d 0 /f
-
 reg add "HKCU\Software\Policies\Microsoft\MicrosoftEdge\PhishingFilter" /v EnabledV9 /t REG_DWORD /d 0 /f
 reg add "HKLM\Software\Policies\Microsoft\MicrosoftEdge\PhishingFilter" /v EnabledV9 /t REG_DWORD /d 0 /f
 
@@ -225,12 +210,11 @@ reg add "HKCU\Software\Policies\Microsoft\Windows\CloudContent" /v DisableWindow
 reg add "HKCU\Software\Policies\Microsoft\Windows\CloudContent" /v DisableWindowsSpotlightWindowsWelcomeExperience /t REG_DWORD /d 1 /f
 reg add "HKCU\Software\Policies\Microsoft\Windows\CloudContent" /v DisableWindowsSpotlightOnActionCenter /t REG_DWORD /d 1 /f
 reg add "HKCU\Software\Policies\Microsoft\Windows\CloudContent" /v DisableWindowsSpotlightOnSettings /t REG_DWORD /d 1 /f
-
 reg add "HKLM\Software\Policies\Microsoft\Windows\Messaging" /v AllowMessageSync /t REG_DWORD /d 0 /f
 
 REM WINDOWS SEARCH
-echo y|reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v PrimaryIntranetSearchScopeUrl /t REG_SZ /d 'http://www.google.com/search?q={searchTerms}' /f
-echo y|reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v SecondaryIntranetSearchScopeUrl /t REG_SZ /d 'https://duckduckgo.com/?kae=t&q={searchTerms}' /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v PrimaryIntranetSearchScopeUrl /t REG_SZ /d 'http://www.google.com/search?q={searchTerms}' /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v SecondaryIntranetSearchScopeUrl /t REG_SZ /d 'https://duckduckgo.com/?kae=t&q={searchTerms}' /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v AllowCloudSearch /t REG_DWORD /d 2 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v AllowCortanaAboveLock /t REG_DWORD /d 0 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v AllowCortana /t REG_DWORD /d 1 /f
@@ -252,8 +236,11 @@ reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\SearchSettings" /v IsAAD
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\SearchSettings" /v IsDeviceSearchHistoryEnabled /t REG_DWORD /d 0 /f 
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\SearchSettings" /v IsMSACloudSearchEnabled /t REG_DWORD /d 0 /f 
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\SearchSettings" /v SafeSearchMode /t REG_DWORD /d 0 /f 
-reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" /v SearchboxTaskbarMode /d 1 /t REG_DWORD /f 
-
+rem disable taskbar search box
+reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" /v SearchboxTaskbarMode /d 0 /t REG_DWORD /f 
+reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\appDiagnostics" /v Value /d 'Deny' /t REG_SZ /f
+reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\userAccountInformation" /v Value /d 'Deny' /t REG_SZ /f
+reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location" /v Value /d 'Deny' /t REG_SZ /f 
 reg add "HKLM\SOFTWARE\Microsoft\Speech_OneCore\Preferences" /v ModelDownloadAllowed /t REG_DWORD /d 3 /f
 reg add "HKLM\SOFTWARE\Microsoft\Speech_OneCore\Preferences" /v VoiceActivationEnableAboveLockscreen /t REG_DWORD /d 3 /f
 
@@ -265,20 +252,10 @@ reg add "HKCU\Software\Policies\Microsoft\Windows\Explorer" /v DisableSearchBoxS
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarAnimations /t REG_DWORD /d 0 /f
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\SystemGuard" /v "Enabled" /t REG_DWORD /d 1 /f
 reg add "HKLM\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters" /v AllowInsecureGuestAuth /t REG_DWORD /d 0 /f
-rem these just seem unnecessary
 reg add "HKCU\Control Panel\Desktop" /v ActiveWndTrkTimeout /t REG_DWORD /d 10 /f
 reg add "HKCU\Control Panel\Desktop" /v MenuShowDelay /t REG_DWORD /d 0 /f
 reg add "HKCU\Control Panel\Mouse" /v MouseHoverTime /t REG_DWORD /d 30 /f
 
-rem do this through group policy!
-rem kernel shadow stacks seems to cause bizarre issues and are probably not supported on most cpus 
-rem reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\KernelShadowStacks" /v Enabled /t REG_DWORD /d 1 /f 
-rem this one!  this in particular
-rem reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\KernelShadowStacks" /v WasEnabledBy /t REG_DWORD /d 2 /f 
-rem reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard" /v "EnableVirtualizationBasedSecurity" /t REG_DWORD /d 1 /f
-rem reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard" /v "RequirePlatformSecurityFeatures" /t REG_DWORD /d 1 /f
-rem reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard" /v "Locked" /t REG_DWORD /d 1 /f
-rem reg add "HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity" /v "Enabled" /t REG_DWORD /d 1 /f
 REG DELETE "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender" /v DisableAntiSpyware /f
 
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\SettingSync" /v DisableApplicationSettingSync /t REG_DWORD /d 2 /f
@@ -330,7 +307,26 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Speech" /v AllowSpeechModelUpdate /t R
 reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Privacy" /v TailoredExperiencesWithDiagnosticDataEnabled /t REG_DWORD /d 0 /f 
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Settings" /v DisableSendGenericDriverNotFoundToWER /t REG_DWORD /d 1 /f 
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Settings" /v DisableSendRequestAdditionalSoftwareToWER /t REG_DWORD /d 1 /f 
-
+reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\SettingSync\Groups\Personalization" /v Enabled /t REG_DWORD /d 0 /f 
+reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\SettingSync\Groups\BrowserSettings" /v Enabled /t REG_DWORD /d 0 /f 
+reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\SettingSync\Groups\Credentials" /v Enabled /t REG_DWORD /d 0 /f 
+reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\SettingSync\Groups\Accessibility" /v Enabled /t REG_DWORD /d 0 /f 
+reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\SettingSync\Groups\Windows" /v Enabled /t REG_DWORD /d 0 /f 
+reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\SettingSync" /v SyncPolicy /d 5 /t REG_DWORD /f 
+reg add "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\UserProfileEngagement" /v ScoobeSystemSettingEnabled /d 0 /t REG_DWORD /f 
+rem description: Disables 'Always Read and Scan This Section' in Control Panel for QoL
+reg add "HKCU\SOFTWARE\Microsoft\Ease of Access" /v selfscan /d 0 /t REG_DWORD /f 
+reg add "HKCU\SOFTWARE\Microsoft\Ease of Access" /v selfvoice /d 0 /t REG_DWORD /f 
+rem description: Disables commonly annoying features such as pressing shift 5 times for sticky keys.
+reg add "HKCU\Control Panel\Accessibility\HighContrast" /v Flags /d 0 /t REG_DWORD /f 
+reg add "HKCU\Control Panel\Accessibility\Keyboard Response" /v Flags /d 0 /t REG_DWORD /f 
+reg add "HKCU\Control Panel\Accessibility\MouseKeys" /v Flags /d 0 /t REG_DWORD /f 
+reg add "HKCU\Control Panel\Accessibility\StickyKeys" /v Flags /d 0 /t REG_DWORD /f 
+reg add "HKCU\Control Panel\Accessibility\ToggleKeys" /v Flags /d 0 /t REG_DWORD /f 
+rem # Disable language bar shortcuts
+reg add "HKCU\Keyboard Layout\Toggle" /v "Layout Hotkey" /d 3 /t REG_DWORD /f 
+reg add "HKCU\Keyboard Layout\Toggle" /v "Language Hotkey" /d 3 /t REG_DWORD /f 
+reg add "HKCU\Keyboard Layout\Toggle" /v "Hotkey" /d 3 /t REG_DWORD /f
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\CompatTelRunner.exe" /v Debugger /t REG_SZ /d '%windir%\System32\taskkill.exe' /f
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\AggregatorHost.exe" /v Debugger /t REG_SZ /d '%windir%\System32\taskkill.exe' /f
 reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\DeviceCensus.exe" /v Debugger /t REG_SZ /d '%windir%\System32\taskkill.exe' /f
@@ -375,23 +371,24 @@ rem description: Improves performance in File Explorer by not automatically dete
 reg add "HKCU\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags\AllFolders\Shell" /v FolderType /t REG_SZ /d "NotSpecified" /f 
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Task Scheduler\Maintenance" /v WakeUp /t REG_DWORD /d 0 /f 
 reg add HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Communications /v ConfigureChatAutoInstall /t REG_DWORD /d 0 /f
-reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Chat" /f /v ChatIcon /t REG_DWORD /d 2
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Chat" /f /v ChatIcon /t REG_DWORD /d 2 /f
+reg add "HKEY_LOCAL_MACHINE\Software\Microsoft\OLE" /v EnableDCOM /t REG_SZ /d "N" /f
 
-sc config WdiSystemHost start= disabled
-sc config WdiServiceHost start= disabled
-sc config DPS start= disabled
-sc config PcaSvc start= disabled
-sc config wisvc start= disabled
-sc config DiagTrack start= disabled
-sc config WerSvc start= disabled
-sc config diagnosticshub.standardcollector.service start= disabled
-sc config ndu start= disabled
-sc config netbt start= disabled
-sc config telemetry start= disabled
-sc config bam start= disabled
-sc config dam start= disabled
-sc config GraphicsPerfSvc start= disabled
-sc config sysmain start= disabled
+sc config WdiSystemHost start=disabled
+sc config msdtc.exe start=disabled
+rem this is to stop the weird explorer.exe crash on restart when a gamepad is connected, will not break controller working in games, weirdly
+sc config gameinputsvc start=disabled
+sc config DPS start=disabled
+sc config PcaSvc start=disabled
+sc config DiagTrack start=disabled
+sc config diagnosticshub.standardcollector.service start=disabled
+sc config ndu start=disabled
+sc config netbt start=disabled
+sc config telemetry start=disabled
+sc config bam start=disabled
+sc config dam start=disabled
+sc config GraphicsPerfSvc start=disabled
+sc config sysmain start=disabled
 sc config "AppXSvc" start=disabled
 sc config beep start=disabled
 sc config GpuEnergyDrv start=disabled
@@ -406,6 +403,27 @@ sc config PcaSvc start=disabled
 sc config WSearch start=disabled
 sc config wercplsupport start=disabled
 sc config UCPD start=disabled
+
+sc config WdiServiceHost start=demand
+sc config WerSvc start=demand
+sc config lmhosts start=demand
+sc config SharedAccess start=demand
+sc config Wecsvc start=demand
+sc config BITS start=demand
+sc config phonesvc start=demand
+sc config SCardSvr start=demand
+sc config WbioSrvc start=demand
+sc config WMPNetworkSvc start=demand
+sc config BTAGService start=demand
+sc config BthAvctpSvc start=demand
+sc config RtkBtManServ start=demand
+sc config WdiSystemHost start=demand
+sc config wisvc start=demand
+sc config WbioSrvc start=demand
+sc config XboxNetApiSvc start=demand
+sc config XboxGipSvc start=demand
+sc config XblGameSave start=demand
+sc config XblAuthManager start=demand
 
 powercfg -h off
 
@@ -456,10 +474,6 @@ setx POWERSHELL_TELEMETRY_OPTOUT 1
 setx DOTNET_CLI_TELEMETRY_OPTOUT 1
 
 net accounts /maxpwage:unlimited
-
-PowerShell -NonInteractive -NoLogo -NoP -C "& {$tmp = (New-TemporaryFile).FullName; CertUtil -generateSSTFromWU -f $tmp; if ( (Get-Item $tmp | Measure-Object -Property Length -Sum).sum -gt 0 ) { $SST_File = Get-ChildItem -Path $tmp; $SST_File | Import-Certificate -CertStoreLocation "Cert:\LocalMachine\Root"; $SST_File | Import-Certificate -CertStoreLocation "Cert:\LocalMachine\AuthRoot" } Remove-Item -Path $tmp}" >NUL 2>nul
-
-vivetool /enable /id:4399941,44353396
 
 reg add HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Appx\AppxAllUserStore\Deprovisioned /f
 reg add HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Appx\AppxAllUserStore\Deprovisioned\Microsoft.549981C3F5F10_8wekyb3d8bbwe /f
@@ -519,7 +533,6 @@ reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\System /v RSoPLogging /t REG_DW
 reg add HKLM\SOFTWARE\Policies\Microsoft\Windows\WDI\{9c5a40da-b965-4fc3-8781-88dd50a6299d} /v ScenarioExecutionEnabled /t REG_DWORD /d 0 /f 
 reg add HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced /v Start_TrackProgs /t REG_DWORD /d 0 /f
 reg add HKLM\SOFTWARE\Policies\Microsoft\DeviceHealthAttestationService /v EnableDeviceHealthAttestationService /t REG_DWORD /d 0 /f
-
 powershell -c "Get-AppxPackage -AllUsers *Microsoft.MicrosoftStickyNotes* | Remove-AppxPackage"
 powershell -c "Get-AppxProvisionedPackage -Online | Where-Object DisplayName -eq "Microsoft.MicrosoftStickyNotes" | Remove-AppxProvisionedPackage -Online"
 powershell -c "Get-AppxPackage -AllUsers *OneDrive* | Remove-AppxPackage"
@@ -624,3 +637,21 @@ powershell -c "Get-AppxPackage -AllUsers *Microsoft.YourPhone* | Remove-AppxPack
 powershell -c "Get-AppxProvisionedPackage -Online | Where-Object DisplayName -eq "Microsoft.YourPhone" | Remove-AppxProvisionedPackage -Online"
 powershell -c "Get-AppxPackage -AllUsers *MicrosoftWindows.Client.AIX* | Remove-AppxPackage"
 powershell -c "Get-AppxProvisionedPackage -Online | Where-Object DisplayName -eq "MicrosoftWindows.Client.AIX" | Remove-AppxProvisionedPackage -Online"
+
+powershell -c '[System.Environment]::SetEnvironmentVariable("KnownFolder.Pictures", "D:\jpg", "User")'
+powershell -c '[System.Environment]::SetEnvironmentVariable("KnownFolder.Downloads", "e:\downloads", "User")'
+powershell -c '[System.Environment]::SetEnvironmentVariable("KnownFolder.Documents", "d:\pdf", "User")'
+powershell -c '[System.Environment]::SetEnvironmentVariable("KnownFolder.Music", "d:\mp3", "User")'
+powershell -c '[System.Environment]::SetEnvironmentVariable("KnownFolder.Videos", "e:\video", "User")'
+powershell -c Set-MpPreference -EnableNetworkProtection Enabled -Force
+rem set this to disabled to not flag my sys admin utils as unwanted apps, change if desired
+powershell -c Set-MpPreference -PUAProtection Disabled -Force
+powershell -c Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
+powershell -c Set-ItemPropertyVerified -Path "$PathToCUExplorer\AutoplayHandlers" -Name "DisableAutoplay" -Type DWord -Value 1
+powershell -c Set-ItemPropertyVerified -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoDriveTypeAutoRun" -Type DWord -Value 255
+powershell -c Disable-SearchAppForUnknownExt
+powershell -c Set-ItemPropertyVerified -Path "$PathToCUExplorerAdvanced" -Name "HideFileExt" -Type DWord -Value 0
+powershell -c Set-ItemPropertyVerified -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Type DWord -Value 5
+powershell -c Set-ItemPropertyVerified -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "PromptOnSecureDesktop" -Type DWord -Value 1
+powershell -c Set-ItemPropertyVerified -Path "$PathToLMPoliciesMRT" -Name "DontOfferThroughWUAU" -Type DWord -Value 0
+powershell -c setx /M MP_FORCE_USE_SANDBOX 1
