@@ -173,8 +173,12 @@ reg add "HKCU\Software\Policies\Microsoft\WindowsMovieMaker" /v CodecDownload /t
 reg add "HKCU\Software\Policies\Microsoft\WindowsMovieMaker" /v WebPublish /t REG_DWORD /d 0 /f
 reg add "HKLM\Software\Policies\Microsoft\EventViewer" /v MicrosoftEventVwrDisableLinks /t REG_DWORD /d 1 /f
 reg add "HKLM\Software\Policies\Microsoft\Windows\Internet Connection Wizard" /v ExitOnMSICW /t REG_DWORD /d 1 /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsAI" /v DisableAIDataAnalysis /t REG_DWORD /d 1 /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Settings" /v DisableSendRequestAdditionalSoftwareToWER /d 1 /f /t REG_DWORD
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Settings" /v DisableSendGenericDriverNotFoundToWER /d 1 /f /t REG_DWORD
 
 REM ERROR REPORTING
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\WMI\Autologger\Diagtrack-Listener" /v Start /t REG_DWORD /d 0 /f
 reg add "HKLM\Software\Policies\Microsoft\Windows\Windows Error Reporting" /v Disabled /t REG_DWORD /d 1 /f
 reg add "HKCU\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting" /v AutoApproveOSDumps /t REG_DWORD /d 0 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting" /v AutoApproveOSDumps  /t REG_DWORD /d 0 /f
@@ -213,8 +217,8 @@ reg add "HKCU\Software\Policies\Microsoft\Windows\CloudContent" /v DisableWindow
 reg add "HKLM\Software\Policies\Microsoft\Windows\Messaging" /v AllowMessageSync /t REG_DWORD /d 0 /f
 
 REM WINDOWS SEARCH
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v PrimaryIntranetSearchScopeUrl /t REG_SZ /d 'http://www.google.com/search?q={searchTerms}' /f
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v SecondaryIntranetSearchScopeUrl /t REG_SZ /d 'https://duckduckgo.com/?kae=t&q={searchTerms}' /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v PrimaryIntranetSearchScopeUrl /t REG_SZ /d "http://www.google.com/search?q={searchTerms}" /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v SecondaryIntranetSearchScopeUrl /t REG_SZ /d "https://duckduckgo.com/?kae=t&q={searchTerms}" /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v AllowCloudSearch /t REG_DWORD /d 2 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v AllowCortanaAboveLock /t REG_DWORD /d 0 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Windows Search" /v AllowCortana /t REG_DWORD /d 1 /f
@@ -286,6 +290,9 @@ reg add "HKCU\Software\Microsoft\Personalization\Settings" /v AcceptedPrivacyPol
 reg add "HKCU\Software\Microsoft\InputPersonalization" /v AllowInputPersonalization /t REG_DWORD /d 0 /f
 reg add "HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\TextInput" /v AllowLinguisticDataCollection /t REG_DWORD /d 0 /f
 reg add "HKCU\Software\Microsoft\Input\TIPC" /v Enabled /t REG_DWORD /d 0 /f
+reg add "HKCU\SOFTWARE\Microsoft\Input\Settings" /v InsightsEnabled /d 0 /t REG_DWORD /f
+
+reg add "HKLM\Software\Microsoft\Input\TIPC" /v Enabled /t REG_DWORD /d 0 /f
 reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Privacy" /v TailoredExperiencesWithDiagnosticDataEnabled /t REG_DWORD /d 0 /f
 reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Diagnostics\DiagTrack\EventTranscriptKey" /v EnableEventTranscript /t REG_DWORD /d 0 /f
 reg add "HKCU\Software\Microsoft\Siuf\Rules" /v NumberOfSIUFInPeriod /t REG_DWORD /d 0 /f
@@ -373,6 +380,11 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\Task Scheduler\Maintenance" /v
 reg add HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Communications /v ConfigureChatAutoInstall /t REG_DWORD /d 0 /f
 reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Chat" /f /v ChatIcon /t REG_DWORD /d 2 /f
 reg add "HKEY_LOCAL_MACHINE\Software\Microsoft\OLE" /v EnableDCOM /t REG_SZ /d "N" /f
+reg add "HKCU\Software\NVIDIA Corporation\NVControlPanel2\Client" /v OptInOrOutPreference /t REG_DWORD /d 0 /f
+reg add "HKCU\Software\Policies\Microsoft\office\16.0\common" /v sendcustomerdata /t REG_DWORD /d 0 /f
+reg add "HKCU\Software\Policies\Microsoft\office\common\clienttelemetry" /v sendtelemetry /t REG_DWORD /d 0 /f
+reg add "HKCU\Software\Policies\Microsoft\office\16.0\common" /v qmenable /t REG_DWORD /d 0 /f
+
 
 sc config WdiSystemHost start=disabled
 sc config msdtc.exe start=disabled
@@ -647,11 +659,16 @@ powershell -c Set-MpPreference -EnableNetworkProtection Enabled -Force
 rem set this to disabled to not flag my sys admin utils as unwanted apps, change if desired
 powershell -c Set-MpPreference -PUAProtection Disabled -Force
 powershell -c Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
-powershell -c Set-ItemPropertyVerified -Path "$PathToCUExplorer\AutoplayHandlers" -Name "DisableAutoplay" -Type DWord -Value 1
-powershell -c Set-ItemPropertyVerified -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoDriveTypeAutoRun" -Type DWord -Value 255
+powershell -c Set-ItemProperty Verified -Path "$PathToCUExplorer\AutoplayHandlers" -Name "DisableAutoplay" -Type DWord -Value 1
+powershell -c Set-ItemProperty Verified -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoDriveTypeAutoRun" -Type DWord -Value 255
 powershell -c Disable-SearchAppForUnknownExt
-powershell -c Set-ItemPropertyVerified -Path "$PathToCUExplorerAdvanced" -Name "HideFileExt" -Type DWord -Value 0
-powershell -c Set-ItemPropertyVerified -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Type DWord -Value 5
-powershell -c Set-ItemPropertyVerified -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "PromptOnSecureDesktop" -Type DWord -Value 1
-powershell -c Set-ItemPropertyVerified -Path "$PathToLMPoliciesMRT" -Name "DontOfferThroughWUAU" -Type DWord -Value 0
+powershell -c Set-ItemProperty Verified -Path "$PathToCUExplorerAdvanced" -Name "HideFileExt" -Type DWord -Value 0
+powershell -c Set-ItemProperty Verified -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Type DWord -Value 5
+powershell -c Set-ItemProperty Verified -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "PromptOnSecureDesktop" -Type DWord -Value 1
+powershell -c Set-ItemProperty Verified -Path "$PathToLMPoliciesMRT" -Name "DontOfferThroughWUAU" -Type DWord -Value 0
 powershell -c setx /M MP_FORCE_USE_SANDBOX 1
+powershell -c Set-ItemProperty Verified -Path "$PathToCUGameBar" -Name "AllowAutoGameMode" -Type DWord -Value 1
+powershell -c Set-ItemProperty Verified -Path "$PathToCUGameBar" -Name "AutoGameModeEnabled" -Type DWord -Value 1
+powershell -c Set-ItemProperty Verified -Path "$PathToLMMultimediaSystemProfileOnGameTasks" -Name "GPU Priority" -Type DWord -Value 8 # Default: 8
+powershell -c Set-ItemProperty Verified -Path "$PathToLMMultimediaSystemProfileOnGameTasks" -Name "Priority" -Type DWord -Value 6 # Default: 2
+powershell -c Set-ItemProperty Verified -Path "$PathToLMMultimediaSystemProfileOnGameTasks" -Name "Scheduling Category" -Type String -Value "High" # Default: "Medium"
