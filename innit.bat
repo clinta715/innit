@@ -36,10 +36,13 @@ bcdedit /set tscsyncpolicy legacy
 bcdedit /deletevalue useplatformclock
 bcdedit /set disabledynamictick yes
 bcdedit /set lastknowngood yes
+bcdedit /set useplatformtick yes
 
 rem reset these as the defaults seem to work best and anything else causes issues with ssh loopback for some bizarre reason
 netsh interface Teredo set state type=default
 netsh interface Teredo set state servername=default
+
+reg add "HKLM\System\CurrentControlSet\Control\Session Manager\kernel" /v GlobalTimerResolutionRequests /t REG_DWORD /f /d 1
 
 REM WINDOWS NT
 rem fix terminal services being weird when you connect remotely
@@ -650,25 +653,15 @@ powershell -c "Get-AppxProvisionedPackage -Online | Where-Object DisplayName -eq
 powershell -c "Get-AppxPackage -AllUsers *MicrosoftWindows.Client.AIX* | Remove-AppxPackage"
 powershell -c "Get-AppxProvisionedPackage -Online | Where-Object DisplayName -eq "MicrosoftWindows.Client.AIX" | Remove-AppxProvisionedPackage -Online"
 
-powershell -c '[System.Environment]::SetEnvironmentVariable("KnownFolder.Pictures", "D:\jpg", "User")'
-powershell -c '[System.Environment]::SetEnvironmentVariable("KnownFolder.Downloads", "e:\downloads", "User")'
-powershell -c '[System.Environment]::SetEnvironmentVariable("KnownFolder.Documents", "d:\pdf", "User")'
-powershell -c '[System.Environment]::SetEnvironmentVariable("KnownFolder.Music", "d:\mp3", "User")'
-powershell -c '[System.Environment]::SetEnvironmentVariable("KnownFolder.Videos", "e:\video", "User")'
+rem does not seem to work
+rem powershell -c '[System.Environment]::SetEnvironmentVariable("KnownFolder.Pictures", "D:\jpg", "User")'
+rem powershell -c '[System.Environment]::SetEnvironmentVariable("KnownFolder.Downloads", "e:\downloads", "User")'
+rem powershell -c '[System.Environment]::SetEnvironmentVariable("KnownFolder.Documents", "d:\pdf", "User")'
+rem powershell -c '[System.Environment]::SetEnvironmentVariable("KnownFolder.Music", "d:\mp3", "User")'
+rem powershell -c '[System.Environment]::SetEnvironmentVariable("KnownFolder.Videos", "e:\video", "User")'
+
 powershell -c Set-MpPreference -EnableNetworkProtection Enabled -Force
 rem set this to disabled to not flag my sys admin utils as unwanted apps, change if desired
 powershell -c Set-MpPreference -PUAProtection Disabled -Force
 powershell -c Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
-powershell -c Set-ItemProperty Verified -Path "$PathToCUExplorer\AutoplayHandlers" -Name "DisableAutoplay" -Type DWord -Value 1
-powershell -c Set-ItemProperty Verified -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name "NoDriveTypeAutoRun" -Type DWord -Value 255
-powershell -c Disable-SearchAppForUnknownExt
-powershell -c Set-ItemProperty Verified -Path "$PathToCUExplorerAdvanced" -Name "HideFileExt" -Type DWord -Value 0
-powershell -c Set-ItemProperty Verified -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "ConsentPromptBehaviorAdmin" -Type DWord -Value 5
-powershell -c Set-ItemProperty Verified -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "PromptOnSecureDesktop" -Type DWord -Value 1
-powershell -c Set-ItemProperty Verified -Path "$PathToLMPoliciesMRT" -Name "DontOfferThroughWUAU" -Type DWord -Value 0
 powershell -c setx /M MP_FORCE_USE_SANDBOX 1
-powershell -c Set-ItemProperty Verified -Path "$PathToCUGameBar" -Name "AllowAutoGameMode" -Type DWord -Value 1
-powershell -c Set-ItemProperty Verified -Path "$PathToCUGameBar" -Name "AutoGameModeEnabled" -Type DWord -Value 1
-powershell -c Set-ItemProperty Verified -Path "$PathToLMMultimediaSystemProfileOnGameTasks" -Name "GPU Priority" -Type DWord -Value 8 # Default: 8
-powershell -c Set-ItemProperty Verified -Path "$PathToLMMultimediaSystemProfileOnGameTasks" -Name "Priority" -Type DWord -Value 6 # Default: 2
-powershell -c Set-ItemProperty Verified -Path "$PathToLMMultimediaSystemProfileOnGameTasks" -Name "Scheduling Category" -Type String -Value "High" # Default: "Medium"
